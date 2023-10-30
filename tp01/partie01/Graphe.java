@@ -1,13 +1,14 @@
 package tp01.partie01;
 
-import com.mxgraph.layout.mxCompactTreeLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.view.mxGraph;
-import org.jgraph.graph.Edge;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.AStarShortestPath;
+import org.jgrapht.graph.DefaultWeightedEdge;
 
 import javax.swing.*;
-import java.util.List;
 import java.util.Map;
+
 
 public class graphe extends JFrame {
     public graphe(){
@@ -34,6 +35,7 @@ public class graphe extends JFrame {
 
         mxGraphComponent graphComponent = new mxGraphComponent(graphe);
         getContentPane().add(graphComponent);
+        
     }
 
     public static void main(String[] args){
@@ -54,6 +56,8 @@ public class graphe extends JFrame {
 
         System.out.println("2/La matrice d'adjacence relative à ce graphe:");
         matrice.afficherMatrice();
+
+        System.out.println("3/L'algorithme A*:");
 
 
     }
