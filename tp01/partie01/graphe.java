@@ -10,7 +10,8 @@ import java.util.*;
 
 public class graphe {
 
-    private static List<Object> reconstructPath(Map<Object, Object> cameFrom, Object courant) {
+    //Déclaration de la fonction de recontruction du chemin utilisé dans l'implémentation de l'Algorithme A*
+    private static List<Object> reconstruireChemin(Map<Object, Object> cameFrom, Object courant) {
         List<Object> chemin = new ArrayList<>();
         chemin.add(courant);
         while (cameFrom.containsKey(courant)) {
@@ -20,58 +21,66 @@ public class graphe {
         return chemin;
     }
 
-    private static List<Object> aStar(Object depart, Object arrivee, Map<Object, Integer> heuristique, int[][] matriceAdj, List<Object> sommets) {
-        Set<Object> explored = new HashSet<>();
-        Map<Object, Object> cameFrom = new HashMap<>();
-        Map<Object, Integer> gScore = new HashMap<>();
-        Map<Object, Integer> fScore = new HashMap<>();
+    private static List<Object> Aetoile(Object depart, Object arrivee, Map<Object, Integer> heuristique, int[][] matriceAdj, List<Object> sommets) {
+
+        // Initialisation des ensembles et des maps nécessaires pour l'algorithme A*
+        Set<Object> visite = new HashSet<>();
+        Map<Object, Object> parent = new HashMap<>();
+        Map<Object, Integer> g = new HashMap<>();
+        Map<Object, Integer> f = new HashMap<>();
 
         for (Object vertex : sommets) {
-            gScore.put(vertex, Integer.MAX_VALUE);
-            fScore.put(vertex, Integer.MAX_VALUE);
+            g.put(vertex, Integer.MAX_VALUE);
+            f.put(vertex, Integer.MAX_VALUE);
         }
 
-        gScore.put(depart, 0);
-        fScore.put(depart, heuristique.get(depart));
+        g.put(depart, 0);
+        f.put(depart, heuristique.get(depart));
 
-        PriorityQueue<Object> openSet = new PriorityQueue<>(Comparator.comparingInt(fScore::get));
+        PriorityQueue<Object> openSet = new PriorityQueue<>(Comparator.comparingInt(f::get));
         openSet.add(depart);
 
+        // Implémentation de l'algorithme A* (boucle principale)
         while (!openSet.isEmpty()) {
             Object courant = openSet.poll();
 
             if (courant.equals(arrivee)) {
-                return reconstructPath(cameFrom, arrivee);
+                return reconstruireChemin(parent, arrivee);
             }
 
-            explored.add(courant);
+            visite.add(courant);
 
             for (int i = 0; i < sommets.size(); i++) {
                 if (matriceAdj[sommets.indexOf(courant)][i] != 0) {
                     Object voisin = sommets.get(i);
-                    int tentative_gScore = gScore.get(courant) + matriceAdj[sommets.indexOf(courant)][i];
-                    if (tentative_gScore < gScore.get(voisin)) {
-                        cameFrom.put(voisin, courant);
-                        gScore.put(voisin, tentative_gScore);
-                        fScore.put(voisin, tentative_gScore + heuristique.get(voisin));
-                        if (!explored.contains(voisin)) {
+                    int tentative_gScore = g.get(courant) + matriceAdj[sommets.indexOf(courant)][i];
+                    if (tentative_gScore < g.get(voisin)) {
+                        parent.put(voisin, courant);
+                        g.put(voisin, tentative_gScore);
+                        f.put(voisin, tentative_gScore + heuristique.get(voisin));
+                        if (!visite.contains(voisin)) {
                             openSet.add(voisin);
                         }
                     }
                 }
             }
         }
+        // Retourne null si aucun chemin n'a été trouvé
         return null;
     }
     public static void main(String[] args) {
+        // Création du graphe e
         mxGraph graphe = new mxGraph();
         Object parent = graphe.getDefaultParent();
 
+        // Initialisation des listes des sommets et des arretes
         List<Object> sommets = new ArrayList<>();
         List<Object> arretes = new ArrayList<>();
 
         graphe.getModel().beginUpdate();
         Map<Object, Integer> h;
+
+        // L'insertion des sommets et des arêtes dans le graphe
         try {
             Object s = graphe.insertVertex(parent, null, "S", 20, 120, 80, 40);
             Object a = graphe.insertVertex(parent, null, "A", 160, 60, 80, 40);
@@ -109,22 +118,18 @@ public class graphe {
             graphe.getModel().endUpdate();
         }
 
+        // Initialisation de la matrice d'adjacence
         int[][] matriceAdj = new int[sommets.size()][sommets.size()];
-
-        for (int i = 0; i < sommets.size(); i++) {
-            for (int j = 0; j < sommets.size(); j++) {
-                matriceAdj[i][j] = 0;
-            }
-        }
 
         for (Object arrete : arretes) {
             int src = sommets.indexOf(graphe.getModel().getTerminal(arrete, true));
             int dis = sommets.indexOf(graphe.getModel().getTerminal(arrete, false));
 
             Object value = ((mxCell) arrete).getValue();
-            //matriceAdj[src][dis] = ((Integer) value).intValue();
             matriceAdj[src][dis] = (Integer) value;
         }
+
+        // Affichage de la matrice d'adjacence du graphe
         System.out.println("2/ La matrice d'adjacence relative à ce graphe est :");
         for (int[] ints : matriceAdj) {
             for (int j = 0; j < matriceAdj.length; j++) {
@@ -133,10 +138,12 @@ public class graphe {
             System.out.println();
         }
 
+        // Définition des sommets de départ et d'arrivée
         Object depart = sommets.get(0);
         Object arrivee = sommets.get(sommets.size() - 1);
 
-        List<Object> cheminAetoile = aStar(depart, arrivee, h, matriceAdj, sommets);
+        // Application de l'algorithme A* et affichage du chemin calculé en rouge sur le graphe
+        List<Object> cheminAetoile = Aetoile(depart, arrivee, h, matriceAdj, sommets);
 
         if (cheminAetoile != null) {
             System.out.println("3/ Le plus court chemin calculé en utilisant l'algorithme de A* est :");
@@ -158,6 +165,7 @@ public class graphe {
         }
 
 
+        // Création de l'interface graphique pour afficher le graphe
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

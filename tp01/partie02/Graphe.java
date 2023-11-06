@@ -10,12 +10,16 @@ import java.util.List;
 
 public class Graphe {
     public static void main(String[] args){
+        //Inialiser le modèle et le sommet départ : Parent
         mxGraph graphe = new mxGraph();
         Object parent = graphe.getDefaultParent();
 
+        //Création de la liste qui conteindra les sommets du graphe
         List<Object> sommets = new ArrayList<>();
+        //Création de la liste qui conteindra les arrétes du graphe
         List<Object> arretes = new ArrayList<>();
 
+        //Création des sommets et des arretes avec leur arguments nécessaires ,de notre graphe
         graphe.getModel().beginUpdate();
         try{
             Object s = graphe.insertVertex(parent, null, "S", 20, 150, 80, 40);
@@ -54,15 +58,12 @@ public class Graphe {
             graphe.getModel().endUpdate();
         }
 
+        //Création de la matrice d'adjacence
         int[][] matriceAdj = new int[sommets.size()][sommets.size()];
 
-        for(int i = 0 ; i< sommets.size(); i++){
-            for(int j = 0; j< sommets.size(); j++){
-                matriceAdj[i][j] = 0;
-            }
-        }
-
-        for (Object arrete:arretes){
+        //Parcourir les arretes du graphe ,pour remplir chaque cellule
+        //de la matrice avec le cout correspondant à chaque arrete
+        for(Object arrete:arretes){
             int src = sommets.indexOf(graphe.getModel().getTerminal(arrete, true));
             int dis = sommets.indexOf(graphe.getModel().getTerminal(arrete, false));
 
@@ -70,6 +71,8 @@ public class Graphe {
             //matriceAdj[src][dis] = ((Integer) value).intValue();
             matriceAdj[src][dis] = (Integer) value;
         }
+
+        //Affichage de la metrice
         System.out.println("La matrice d'adjacence relative à ce graphe est :");
         for (int[] ints : matriceAdj) {
             for (int j = 0; j < matriceAdj.length; j++) {
@@ -78,11 +81,13 @@ public class Graphe {
             System.out.println();
         }
 
+        //Création de la fenetre JFrame
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         mxGraphComponent graphComponent = new mxGraphComponent(graphe);
 
+        //Affichage de graphe
         frame.setTitle("TP01 : Partie 02");
         frame.getContentPane().add(graphComponent);
         frame.setSize(600,300);
