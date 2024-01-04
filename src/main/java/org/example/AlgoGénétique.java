@@ -18,7 +18,7 @@ import java.util.Random;
 
 //Structure d'enregistrement pour stocker dedans toutes les parametres du scenario
 record ResultatScenario( double TempsExc, List<Double> vecteurFitness, double fitnessMoyenne,
-                               double fitnessMax, int nbCrossOver, int nbmutation) {}
+                               double fitnessMax, DefaultCategoryDataset nbcroisement, DefaultCategoryDataset nbmutation) {}
 public class AlgoGénétique {
     private static final int taillePopulation = 4;
     private static final int lenChromosome = 5;
@@ -29,7 +29,7 @@ public class AlgoGénétique {
     public static void main(String[] args) {
         ResultatScenario[] results = new ResultatScenario[4];
         
-        DefaultXYZDataset dataset = new DefaultXYZDataset();
+        //DefaultXYZDataset dataset = new DefaultXYZDataset();
 
         double [] pcValues = {0.75, 0.75, 0.90, 0.90}; //Valeurs de pc respectives pour les 4 scenarios
         double [] pmValues = {0.005, 0.005, 0.01, 0.01}; //Valeurs de pm respectives pour les 4 scenarios
@@ -42,7 +42,7 @@ public class AlgoGénétique {
             results[i] =deroulementScenario(maxGenerationValues[i]);
         }
 
-        double [][][] data = new double [1][pcValues.length * pmValues.length][3];
+        //double [][][] data = new double [1][pcValues.length * pmValues.length][3];
 
         //Creation d'1 graphique à barres JFreeChart pour les temps d'execution
         DefaultCategoryDataset TempExec = new DefaultCategoryDataset();
@@ -51,6 +51,40 @@ public class AlgoGénétique {
         }
         JFreeChart chartTemps = ChartFactory.createBarChart("Comparaison entre les temps d'execution de chaque scenario",
                 "Scenarios", "Temps d'execution (ms)", TempExec);
+
+        //Création d'1 graphique à barres JFreeChart pour le nombre de croisements
+        DefaultCategoryDataset dataCroisement = new DefaultCategoryDataset();
+
+        for (int i = 0; i < results.length; i++) {
+            DefaultCategoryDataset currentDataCroisement = results[i].nbcroisement();
+            for (int rowIndex = 0; rowIndex < currentDataCroisement.getRowCount(); rowIndex++){
+                Comparable <?> rowKey = currentDataCroisement.getRowKey(rowIndex);
+                for (int colIndex = 0; colIndex < currentDataCroisement.getColumnCount(); colIndex++ ){
+                    Comparable <?> columnKey = currentDataCroisement.getColumnKey(colIndex);
+                    dataCroisement.addValue(currentDataCroisement.getValue(rowKey, columnKey),
+                            rowKey + "Scenario " + (i+1) , columnKey);
+                }
+            }
+        }
+        JFreeChart chartCroisement = ChartFactory.createBarChart("Nombre de Croisements",
+                "Itérations","Valeurss ", dataCroisement );
+
+        //Création d'1 graphique à barres JFreeChart pour le nombre de mutations
+        DefaultCategoryDataset dataMutation = new DefaultCategoryDataset();
+
+        for (int i = 0; i < results.length; i++) {
+            DefaultCategoryDataset currentDataMutation = results[i].nbmutation();
+            for (int rowIndex = 0; rowIndex < currentDataMutation.getRowCount(); rowIndex++){
+                Comparable <?> rowKey = currentDataMutation.getRowKey(rowIndex);
+                for (int colIndex = 0; colIndex < currentDataMutation.getColumnCount(); colIndex++ ){
+                    Comparable <?> columnKey = currentDataMutation.getColumnKey(colIndex);
+                    dataMutation.addValue(currentDataMutation.getValue(rowKey, columnKey),
+                            rowKey + "Scenario " + (i+1), columnKey);
+                }
+            }
+        }
+        JFreeChart chartMutation = ChartFactory.createBarChart("Nombre de Mutations",
+                "Itérations","Valeurs ", dataMutation );
 
         //Creation du graphique à lignes JFreeChart pour les valeurs fitness
         XYSeriesCollection datasetFitness = new XYSeriesCollection();
@@ -64,14 +98,13 @@ public class AlgoGénétique {
         JFreeChart chartFitness = ChartFactory.createXYLineChart("Valeurs Fitness des scenarios",
                 "Iterations Fitness", "Vecteur Fitness", datasetFitness);
         //Affichage du graphique dans un panel Swing
-        JFrame frame = new JFrame("Graphique de performances");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ChartPanel chartPanelTemps = new ChartPanel(chartTemps);
-        ChartPanel chartPanelFitness = new ChartPanel(chartFitness);
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, chartPanelTemps, chartPanelFitness);
-        frame.add(splitPane);
-        frame.pack();
-        frame.setVisible(true);
+        AfficherGraph (chartTemps, "Graphique du Temps d'execution");
+        AfficherGraph (chartFitness, "Graphique du Fitness");
+
+        AfficherGraph (chartMutation, "Graphique du Nombre de mutations");
+
+        AfficherGraph (chartCroisement, "Graphique du Nombre de croisements");
+
     }
 
 
@@ -181,6 +214,11 @@ public class AlgoGénétique {
         double fitnessMax = 0;
         int nbCroisements = 0;
         int nbMutations = 0;
+
+        //Collection des données pour la visualisation graphique
+        DefaultCategoryDataset donneesCroisement = new DefaultCategoryDataset();
+        DefaultCategoryDataset donneesMutation = new DefaultCategoryDataset();
+
         long tempDebut = System.currentTimeMillis();
 
         System.out.println("Génération initiale :");
@@ -217,17 +255,20 @@ public class AlgoGénétique {
                         if (!enfants.equals(parents)) {
                             nbMutations++;
                         }
+
                     }
 
                     population = nouvellePopulation;
                     afficherPopulation(population);
                 }
+                donneesCroisement.addValue(nbCroisements, "", "");
+                donneesCroisement.addValue(nbCroisements, "", "");
             }
 
             long tempFin = System.currentTimeMillis();
             long duration = tempFin - tempDebut;
             System.out.println("Temps d'execution : "+ duration + " millisecondes");
-            return new ResultatScenario(duration, fitnessValues, fitnessMoyenne, fitnessMax, nbCroisements, nbMutations);
+            return new ResultatScenario(duration, fitnessValues, fitnessMoyenne, fitnessMax, donneesCroisement, donneesMutation);
     }
 
     // Calculer la fitness moyenne d'une population
@@ -248,17 +289,12 @@ public class AlgoGénétique {
     }
 
     //Créer les différents graphes
-    private static void CreerGraph(double [] xData, double [] yData, String Titre, String xLabel, String yLabel){
-        //création du dataset pour le graphique
-        DefaultXYDataset dataset = new DefaultXYDataset();
-        double[][] seriesData = {xData, yData};
-        dataset.addSeries("Serie de donnees", seriesData);
-        //création du graphique
-        JFreeChart chart = ChartFactory.createXYLineChart(Titre, xLabel, yLabel, dataset, PlotOrientation.VERTICAL, true, false, false);
-        //Affichage du graphique dans un panel Swing
-        JFrame frame = new JFrame("Graphique");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ChartPanel chartPanel = new ChartPanel(chart);
+    private static void AfficherGraph(JFreeChart Chart, String Titre){
+        //Création du panneau pour afficher le graphique
+        ChartPanel chartPanel = new ChartPanel(Chart);
+        //Création de la fenêtre pour afficher le graphique
+        JFrame frame = new JFrame(Titre);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.add(chartPanel);
         frame.pack();
         frame.setVisible(true);
